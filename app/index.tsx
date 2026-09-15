@@ -337,7 +337,10 @@ const styles = StyleSheet.create({
   chipRow: { flexDirection: 'row', flexWrap: 'wrap' },
   chip: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: MIN_TOUCH_TARGET },
   field: {
-    height: 380,
+    // Square, sized from the width it is given. A fixed height left a dead band
+    // below the controls on a large screen, and the targets are positioned from
+    // the measured layout so they follow whatever size it ends up.
+    aspectRatio: 1,
     borderWidth: StyleSheet.hairlineWidth,
     alignItems: 'center',
     justifyContent: 'center',
