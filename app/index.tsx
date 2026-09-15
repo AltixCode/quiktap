@@ -19,9 +19,7 @@ import {
   targetPositions,
   type Tap,
 } from '@/logic/reaction';
-import { shouldShowInterstitial } from '@/monetization/adPolicy';
-import { shouldShowAds } from '@/monetization/entitlements';
-import { showInterstitial } from '@/monetization/interstitial';
+import { noteGameFinished } from '@/monetization/pacing';
 import { usePremiumStore } from '@/store/usePremiumStore';
 import { useRoundStore } from '@/store/useRoundStore';
 import { MIN_TOUCH_TARGET, useTheme, withAlpha } from '@/theme';
@@ -87,17 +85,9 @@ export default function Home() {
       setPhase('over');
       record(scoreSession(tapsRef.current));
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      if (
-        shouldShowAds({ isPremium, isReady }) &&
-        shouldShowInterstitial({
-          gamesPlayed: 1,
-          lastInterstitialAt: 0,
-          now: at,
-          adsRemoved: isPremium,
-        })
-      ) {
-        showInterstitial();
-      }
+      // `at` rather than a second Date.now(): the policy and the record must
+      // agree on when the round ended.
+      void noteGameFinished(at);
     }, TICK_MS);
     return () => clearInterval(id);
   }, [running, endsAt, record, isPremium, isReady]);
