@@ -13,10 +13,11 @@ concurrency:
 jobs:
   quality:
     name: Lint, typecheck, tests, i18n and bundles
-    # The org's self-hosted Linux runner is ARM64. `Linux, X64` matches only the
-    # Hetzner box, which has been stopped since 2026-09-13 — and a job asking for
-    # a label no runner offers does not fail, it queues forever.
-    runs-on: [self-hosted, Linux, ARM64]
+    # Deliberately NOT pinned to an OS. Both self-hosted ARM64 runners — the
+    # Linux container and the macOS box — can run these Node-only steps, and a
+    # job asking for a label no ONLINE runner offers does not fail, it queues
+    # forever. Requiring `Linux` did exactly that when the container went down.
+    runs-on: [self-hosted, ARM64]
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
@@ -78,7 +79,7 @@ jobs:
 
   release-gate:
     name: Release identifiers present
-    runs-on: [self-hosted, Linux, ARM64]
+    runs-on: [self-hosted, ARM64]
     timeout-minutes: 15
     # Only the production path needs real identifiers; a preview build is
     # SUPPOSED to carry Google's test units.
