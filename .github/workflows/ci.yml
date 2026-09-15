@@ -44,6 +44,9 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: tsconfig still includes the generated route types
+        run: node scripts/check-tsconfig.mjs
+
       - name: Typecheck
         run: npm run typecheck
 
