@@ -94,12 +94,21 @@ jest.mock('expo-router', () => {
     setParams: jest.fn(),
     canGoBack: jest.fn(() => true),
   };
+  // Route params are mutable for the same reason: a screen under test needs to
+  // be given an id, and `jest.requireActual('expo-router')` is not an option —
+  // the real module is untransformed ESM and Jest cannot parse it.
+  const params = {};
   return {
     Link: ({ children }) => children,
     Stack: { Screen: () => null },
     useRouter: () => router,
     router,
-    useLocalSearchParams: () => ({}),
+    params,
+    setParams: (next) => {
+      Object.keys(params).forEach((k) => delete params[k]);
+      Object.assign(params, next);
+    },
+    useLocalSearchParams: () => params,
     useSegments: () => [],
     usePathname: () => '/',
     // eslint-disable-next-line react-hooks/exhaustive-deps
