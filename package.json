@@ -53,7 +53,7 @@
     "prebuild": "expo prebuild --clean",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:ci": "jest --ci --coverage",
+    "test:ci": "jest --ci --coverage --runInBand",
     "typecheck": "tsc --noEmit",
     "lint": "expo lint",
     "doctor": "npx expo-doctor",
