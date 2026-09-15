@@ -59,7 +59,7 @@
     "doctor": "npx expo-doctor",
     "assets": "node scripts/generate-assets.mjs",
     "verify": "bash scripts/verify-all.sh",
-    "check:release": "tsx scripts/check-release-config.ts",
+    "check:release": "node scripts/check-paywall-copy.mjs && tsx scripts/check-release-config.ts",
     "build:preview": "eas build --profile preview --platform all",
     "build:production": "npm run check:release && eas build --profile production --platform all",
     "submit:production": "eas submit --profile production --platform all --latest",
