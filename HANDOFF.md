@@ -91,7 +91,7 @@ Changing a bundle id means deleting and recreating the RevenueCat app, which
 | IAP id / product | `6812277331` / `com.altixcode.quiktap.removeads` |
 
 All ten release identifiers plus `EXPO_TOKEN` are already GitHub repo secrets.
-Locally they come from `/Volumes/ExtremePro/Dev/.admob-ids/quiktap.env` —
+Locally they come from `/Volumes/ExtremePro/Dev/mobile_expo_apps/.admob-ids/quiktap.env` —
 never commit that file.
 
 ## Blocked on a person — cannot be scripted
@@ -161,3 +161,16 @@ for a few days. That is normal, not an integration fault.
 - Shared code is generated. Fix it in `AltixCode/next-mobile-apps` (`_template/`)
   and re-run `node scripts/bootstrap.mjs quiktap`, never in this copy —
   otherwise the next regeneration reverts it.
+
+## `check-paywall-copy` fails on purpose
+
+This app is a scaffold. Its paywall still carries the template's placeholder
+claims — "Everything unlocked", "every level, every mode and the full archive",
+"New content is added regularly" — and there is nothing honest to replace them
+with yet, because the app has no levels, no modes and no content.
+
+**Do not turn this gate green by writing copy.** A paywall claim is something a
+buyer pays for, so inventing one here is worse than a red build. Write the app
+first; then say what the purchase actually changes, and leave `feat2`–`feat4`
+blank in `src/i18n/index.ts` for anything it does not. The paywall drops a
+benefit whose title is empty, so fewer than four claims renders correctly.
