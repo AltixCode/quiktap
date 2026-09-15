@@ -24,9 +24,12 @@ interface PremiumState {
   /** The single lifetime package, once the offering has loaded. */
   lifetime: PurchasesPackage | null;
   /**
-   * The offering fetch has finished, whatever it found. Without this the paywall
-   * cannot tell "still loading" from "loaded, and there is nothing to sell" — and
-   * it showed a spinner and the word "Loading price…" forever in the second case.
+   * The offering lookup has finished, whatever the outcome.
+   *
+   * Without this the paywall cannot tell "still fetching" from "there is nothing to fetch",
+   * and it shows a spinner forever on exactly the devices where billing is unavailable —
+   * the same never-resolves failure that once meant no ads at all. A definite "the store is
+   * not reachable" is honest; an eternal spinner is not.
    */
   offeringsResolved: boolean;
   isPurchasing: boolean;
@@ -68,6 +71,8 @@ export const usePremiumStore = create<PremiumState>((set, get) => ({
     }
 
     if (!isPurchasesConfigured) {
+      // Nothing will ever load, so say so rather than leaving the paywall pending.
+      set({ offeringsResolved: true });
       // No billing configured (fresh clone, CI smoke build, a device without Play services):
       // run as a free app. Entitlement is resolved -- to "not premium" unless the cache above
       // said otherwise -- so ads serve normally.
