@@ -23,6 +23,12 @@ interface PremiumState {
   isReady: boolean;
   /** The single lifetime package, once the offering has loaded. */
   lifetime: PurchasesPackage | null;
+  /**
+   * The offering fetch has finished, whatever it found. Without this the paywall
+   * cannot tell "still loading" from "loaded, and there is nothing to sell" — and
+   * it showed a spinner and the word "Loading price…" forever in the second case.
+   */
+  offeringsResolved: boolean;
   isPurchasing: boolean;
   error: string | null;
 
@@ -47,6 +53,7 @@ export const usePremiumStore = create<PremiumState>((set, get) => ({
   isPremium: false,
   isReady: false,
   lifetime: null,
+  offeringsResolved: false,
   isPurchasing: false,
   error: null,
 
@@ -94,8 +101,14 @@ export const usePremiumStore = create<PremiumState>((set, get) => ({
   },
 
   async refreshOfferings() {
-    const offering = await getCurrentOffering();
-    set({ lifetime: lifetimePackage(offering) });
+    try {
+      const offering = await getCurrentOffering();
+      set({ lifetime: lifetimePackage(offering), offeringsResolved: true });
+    } catch {
+      // A store that cannot be reached resolves to "no package", which the paywall renders
+      // as its unavailable state. Throwing here would leave the screen spinning.
+      set({ lifetime: null, offeringsResolved: true });
+    }
   },
 
   async purchase(pkg) {
