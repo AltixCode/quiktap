@@ -1,5 +1,11 @@
 import React, { type ReactNode } from 'react';
-import { ScrollView, StyleSheet, View, type ScrollViewProps } from 'react-native';
+import {
+  ScrollView,
+  StyleSheet,
+  View,
+  useWindowDimensions,
+  type ScrollViewProps,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useTheme } from '@/theme';
@@ -31,6 +37,14 @@ export function Screen({
 }: ScreenProps) {
   const { colors, spacing } = useTheme();
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+
+  // On a tablet the capped column leaves most of the display empty below the
+  // content, which reads as a phone screen pinned to the top of a big one.
+  // Centring it costs nothing when the content is taller than the viewport,
+  // because flexGrow only has slack to distribute when there is slack.
+  const isTablet = width >= 700;
+  const fill = isTablet ? { flexGrow: 1, justifyContent: 'center' as const } : null;
 
   // A tablet is not a big phone. Left to fill, a row of body text runs the
   // whole 13" width and the eye loses the start of the next line; the measure
@@ -51,7 +65,7 @@ export function Screen({
   if (!scroll) {
     return (
       <View style={[styles.flex, { backgroundColor: colors.background }, style]}>
-        <View style={[styles.flex, padding, column]}>{children}</View>
+        <View style={[styles.flex, padding, column, fill]}>{children}</View>
       </View>
     );
   }
@@ -59,7 +73,7 @@ export function Screen({
   return (
     <ScrollView
       style={[styles.flex, { backgroundColor: colors.background }, style]}
-      contentContainerStyle={[padding, column, contentContainerStyle]}
+      contentContainerStyle={[padding, column, fill, contentContainerStyle]}
       keyboardShouldPersistTaps="handled"
       showsVerticalScrollIndicator={false}
       {...rest}
