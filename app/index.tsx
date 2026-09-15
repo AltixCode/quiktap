@@ -20,7 +20,7 @@ export default function Home() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <Screen scroll>
+      <Screen scroll topInset>
         <Text variant="display" style={{ marginTop: spacing['3xl'] }}>
           {t('appName')}
         </Text>

@@ -10,6 +10,8 @@ interface ScreenProps extends Omit<ScrollViewProps, 'children'> {
   /** Extra bottom padding, e.g. to clear a pinned banner ad. */
   bottomInset?: number;
   padded?: boolean;
+  /** Pay the top safe-area inset. Set it on a screen with no navigation header. */
+  topInset?: boolean;
 }
 
 /**
@@ -22,6 +24,7 @@ export function Screen({
   scroll = false,
   bottomInset = 0,
   padded = true,
+  topInset = false,
   contentContainerStyle,
   style,
   ...rest
@@ -29,15 +32,26 @@ export function Screen({
   const { colors, spacing } = useTheme();
   const insets = useSafeAreaInsets();
 
+  // A tablet is not a big phone. Left to fill, a row of body text runs the
+  // whole 13" width and the eye loses the start of the next line; the measure
+  // below is the same one a reading column uses, centred, with the scroll view
+  // itself still full-bleed so the scrollbar stays at the edge.
+  const column = { width: '100%' as const, maxWidth: CONTENT_MAX_WIDTH, alignSelf: 'center' as const };
+
   const padding = {
     paddingHorizontal: padded ? spacing.base : 0,
+    // The top inset is only ours to pay when nothing above us has paid it. A
+    // navigation header already sits in the notch, so adding it there would
+    // push the content down twice; without a header the first line of text
+    // renders *under* the status bar, which is what this fixes.
+    paddingTop: topInset ? insets.top : 0,
     paddingBottom: insets.bottom + bottomInset + spacing.xl,
   };
 
   if (!scroll) {
     return (
-      <View style={[styles.flex, { backgroundColor: colors.background }, padding, style]}>
-        {children}
+      <View style={[styles.flex, { backgroundColor: colors.background }, style]}>
+        <View style={[styles.flex, padding, column]}>{children}</View>
       </View>
     );
   }
@@ -45,7 +59,7 @@ export function Screen({
   return (
     <ScrollView
       style={[styles.flex, { backgroundColor: colors.background }, style]}
-      contentContainerStyle={[padding, contentContainerStyle]}
+      contentContainerStyle={[padding, column, contentContainerStyle]}
       keyboardShouldPersistTaps="handled"
       showsVerticalScrollIndicator={false}
       {...rest}
@@ -54,5 +68,8 @@ export function Screen({
     </ScrollView>
   );
 }
+
+/** The widest a content column gets, in points. Below this nothing changes. */
+const CONTENT_MAX_WIDTH = 640;
 
 const styles = StyleSheet.create({ flex: { flex: 1 } });
