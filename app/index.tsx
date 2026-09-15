@@ -193,13 +193,14 @@ export default function Home() {
                       borderWidth: StyleSheet.hairlineWidth,
                       borderColor: chosen ? colors.accent : colors.border,
                       backgroundColor: chosen ? withAlpha(colors.accent, 0.16) : colors.surface,
-                      opacity: allowed ? 1 : 0.55,
                     },
                   ]}
                 >
-                  <Text variant="body" tone={allowed ? 'default' : 'muted'}>
-                    {name}
-                  </Text>
+                  {/* A locked mode is something you can buy, not a dead control.
+                      It was dimmed twice over -- opacity 0.55 AND a muted tone,
+                      taking the name to 2.40:1 -- while the lock icon beside it
+                      already said everything the dimming was trying to say. */}
+                  <Text variant="body">{name}</Text>
                   {allowed ? null : <Feather name="lock" size={14} color={colors.textMuted} />}
                 </Pressable>
               );
