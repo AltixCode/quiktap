@@ -1,0 +1,99 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Lint, typecheck and test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.21.0
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm run test:ci
+
+      # Only on failure — that is when the report is worth reading — and never
+      # blocking: an artifact storage quota is not a reason to fail a green
+      # test run.
+      - name: Upload coverage report
+        if: failure()
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage/lcov-report
+          retention-days: 3
+          if-no-files-found: ignore
+
+  expo-doctor:
+    name: Expo doctor
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.21.0
+          cache: npm
+      - run: npm ci
+      - name: Validate native config and dependency versions
+        run: npx expo-doctor
+        env:
+          # Doctor only needs the config to resolve; real IDs are not required.
+          EXPO_NO_TELEMETRY: '1'
+
+  bundle:
+    name: Production bundle
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.21.0
+          cache: npm
+      - run: npm ci
+
+      # The closest thing to "does the app actually load" without a device: a
+      # real Metro production build resolves every import and every route, so a
+      # broken module path or a bad expo-router file cannot reach a build.
+      # Exported per platform: `--platform all` would include web, which this
+      # app does not target and has no react-native-web dependency for.
+      - name: Export iOS and Android bundles
+        run: |
+          npx expo export --platform ios --output-dir dist/ios
+          npx expo export --platform android --output-dir dist/android
+        env:
+          APP_VARIANT: production
+          EXPO_NO_TELEMETRY: '1'
+
+      - name: Report bundle size
+        run: |
+          echo "### Bundle size" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          du -sh dist/ios/_expo/static/js/* dist/ios/assets >> "$GITHUB_STEP_SUMMARY"
+          du -sh dist/android/_expo/static/js/* dist/android/assets >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
