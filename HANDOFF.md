@@ -5,6 +5,28 @@ never a pass** — a green build is not a verification.
 
 Last updated: 2026-09-15
 
+## ⚠️ Assume this app crashes on launch until it is launched
+
+quiktap was built and uploaded to TestFlight on 2026-09-15 **without ever having
+been run, once, anywhere**. The "not run" row below was accurate when the
+binary was uploaded.
+
+Two of its five siblings built the same evening from the same template —
+toppl and quandary — **do** die immediately on launch on a real device. No
+one has launched this one either way, so there is no evidence it behaves
+differently, and the honest reading is that it does not.
+
+Two fixes have landed since that build, neither confirmed as the cause: an
+empty `GADApplicationIdentifier` reaching the binary because `??` does not
+catch the empty string that a missing CI secret expands to, and a
+`check:release` that accepted a *malformed* AdMob identifier (an app id and an
+ad unit id differ only by `~` versus `/`). Both make the Ads SDK abort on
+startup, which presents as exactly this symptom.
+
+See toppl's `HANDOFF.md` for the full investigation and what has been ruled
+out. **Do not treat this app as shippable until it has been launched.**
+
+
 ## What this app is
 
 Quiktap is a thirty-second reaction round with two modes. ROUND_SECONDS is a named constant so the code and the store listing cannot drift.
