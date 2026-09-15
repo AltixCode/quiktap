@@ -4,14 +4,15 @@ import { View } from 'react-native';
 
 import { BannerAdSlot } from '@/components/BannerAdSlot';
 import { Button, Screen, Text } from '@/components/ui';
+import { t } from '@/i18n';
 import { useTheme } from '@/theme';
 
 /**
  * Home screen.
  *
- * Scaffolded placeholder — replaced by the real hub when the game layer lands.
- * It exists from the first commit so the navigation shell, theming, paywall and
- * ad slot are wired and testable before any game logic is written.
+ * Scaffolded placeholder — replaced by the real hub when the game layer lands. It exists from
+ * the first commit so the navigation shell, theming, paywall and ad slot are wired and
+ * testable before any game logic is written.
  */
 export default function Home() {
   const router = useRouter();
@@ -21,13 +22,13 @@ export default function Home() {
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <Screen scroll>
         <Text variant="display" style={{ marginTop: spacing['3xl'] }}>
-          Quiktap
+          {t('appName')}
         </Text>
         <Text variant="body" tone="muted" style={{ marginTop: spacing.sm }}>
-          How fast are your reflexes today? Thirty seconds to find out.
+          {t('tagline')}
         </Text>
         <Button
-          label="Settings"
+          label={t('settingsTitle')}
           variant="secondary"
           onPress={() => router.push('/settings')}
           style={{ marginTop: spacing['2xl'] }}

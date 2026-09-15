@@ -8,20 +8,21 @@ import {
   getCurrentOffering,
   getCustomerInfo,
   hasProEntitlement,
-  orderedPackages,
+  lifetimePackage,
   purchasePackage,
   restorePurchases,
 } from '@/monetization/purchases';
 import { isPurchasesConfigured } from '@/monetization/config';
 
-const CACHE_KEY = 'quiktap.entitlement.pro';
+const CACHE_KEY = 'quiktap.entitlement.remove_ads';
 
 interface PremiumState {
   /** The user holds the `pro` entitlement. */
   isPremium: boolean;
   /** Entitlements have resolved at least once — gates ad rendering. */
   isReady: boolean;
-  packages: PurchasesPackage[];
+  /** The single lifetime package, once the offering has loaded. */
+  lifetime: PurchasesPackage | null;
   isPurchasing: boolean;
   error: string | null;
 
@@ -45,7 +46,7 @@ async function cacheEntitlement(isPremium: boolean): Promise<void> {
 export const usePremiumStore = create<PremiumState>((set, get) => ({
   isPremium: false,
   isReady: false,
-  packages: [],
+  lifetime: null,
   isPurchasing: false,
   error: null,
 
@@ -94,7 +95,7 @@ export const usePremiumStore = create<PremiumState>((set, get) => ({
 
   async refreshOfferings() {
     const offering = await getCurrentOffering();
-    set({ packages: orderedPackages(offering) });
+    set({ lifetime: lifetimePackage(offering) });
   },
 
   async purchase(pkg) {

@@ -12,16 +12,14 @@ concurrency:
 
 jobs:
   quality:
-    name: Lint, typecheck and test
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
+    name: Lint, typecheck, tests, i18n and bundles
+    # The org's self-hosted Linux runner is ARM64. `Linux, X64` matches only the
+    # Hetzner box, which has been stopped since 2026-09-13 — and a job asking for
+    # a label no runner offers does not fail, it queues forever.
+    runs-on: [self-hosted, Linux, ARM64]
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24.21.0
-          cache: npm
 
       - name: Install dependencies
         run: npm ci
@@ -35,53 +33,15 @@ jobs:
       - name: Unit tests
         run: npm run test:ci
 
-      # Only on failure — that is when the report is worth reading — and never
-      # blocking: an artifact storage quota is not a reason to fail a green
-      # test run.
-      - name: Upload coverage report
-        if: failure()
-        continue-on-error: true
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage
-          path: coverage/lcov-report
-          retention-days: 3
-          if-no-files-found: ignore
+      - name: i18n completeness
+        run: npm run check:i18n
 
-  expo-doctor:
-    name: Expo doctor
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24.21.0
-          cache: npm
-      - run: npm ci
-      - name: Validate native config and dependency versions
-        run: npx expo-doctor
-        env:
-          # Doctor only needs the config to resolve; real IDs are not required.
-          EXPO_NO_TELEMETRY: '1'
+      - name: UI rules — colour tokens, t(), NativeWind no-ops
+        run: npm run check:ui
 
-  bundle:
-    name: Production bundle
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24.21.0
-          cache: npm
-      - run: npm ci
-
-      # The closest thing to "does the app actually load" without a device: a
-      # real Metro production build resolves every import and every route, so a
-      # broken module path or a bad expo-router file cannot reach a build.
-      # Exported per platform: `--platform all` would include web, which this
-      # app does not target and has no react-native-web dependency for.
+      # The closest thing to "does the app actually load" without a device: a real
+      # Metro production build resolves every import and every route, so a broken
+      # module path or a bad expo-router file cannot reach a build.
       - name: Export iOS and Android bundles
         run: |
           npx expo export --platform ios --output-dir dist/ios
@@ -94,6 +54,44 @@ jobs:
         run: |
           echo "### Bundle size" >> "$GITHUB_STEP_SUMMARY"
           echo '```' >> "$GITHUB_STEP_SUMMARY"
-          du -sh dist/ios/_expo/static/js/* dist/ios/assets >> "$GITHUB_STEP_SUMMARY"
-          du -sh dist/android/_expo/static/js/* dist/android/assets >> "$GITHUB_STEP_SUMMARY"
+          du -sh dist/ios/_expo/static/js/* dist/android/_expo/static/js/* >> "$GITHUB_STEP_SUMMARY"
           echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      # Only on failure — that is when the report is worth reading — and never
+      # blocking: an Actions storage quota is not a reason to fail a green run.
+      - name: Upload coverage report
+        if: failure()
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage/lcov-report
+          retention-days: 3
+          if-no-files-found: ignore
+
+  release-gate:
+    name: Release identifiers present
+    runs-on: [self-hosted, Linux, ARM64]
+    timeout-minutes: 15
+    # Only the production path needs real identifiers; a preview build is
+    # SUPPOSED to carry Google's test units.
+    if: github.ref == 'refs/heads/main'
+    env:
+      ADMOB_IOS_APP_ID: ${{ secrets.ADMOB_IOS_APP_ID }}
+      ADMOB_ANDROID_APP_ID: ${{ secrets.ADMOB_ANDROID_APP_ID }}
+      EXPO_PUBLIC_ADMOB_IOS_BANNER_ID: ${{ secrets.EXPO_PUBLIC_ADMOB_IOS_BANNER_ID }}
+      EXPO_PUBLIC_ADMOB_ANDROID_BANNER_ID: ${{ secrets.EXPO_PUBLIC_ADMOB_ANDROID_BANNER_ID }}
+      EXPO_PUBLIC_ADMOB_IOS_INTERSTITIAL_ID: ${{ secrets.EXPO_PUBLIC_ADMOB_IOS_INTERSTITIAL_ID }}
+      EXPO_PUBLIC_ADMOB_ANDROID_INTERSTITIAL_ID: ${{ secrets.EXPO_PUBLIC_ADMOB_ANDROID_INTERSTITIAL_ID }}
+      EXPO_PUBLIC_ADMOB_IOS_REWARDED_ID: ${{ secrets.EXPO_PUBLIC_ADMOB_IOS_REWARDED_ID }}
+      EXPO_PUBLIC_ADMOB_ANDROID_REWARDED_ID: ${{ secrets.EXPO_PUBLIC_ADMOB_ANDROID_REWARDED_ID }}
+      EXPO_PUBLIC_REVENUECAT_IOS_KEY: ${{ secrets.EXPO_PUBLIC_REVENUECAT_IOS_KEY }}
+      EXPO_PUBLIC_REVENUECAT_ANDROID_KEY: ${{ secrets.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm ci
+      # A missing identifier fails NOTHING on its own: the app falls back to
+      # Google's test ad units, serves ads perfectly, and earns nothing. This is
+      # the only thing that catches it.
+      - name: check:release
+        run: npm run check:release

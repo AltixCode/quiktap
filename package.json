@@ -15,6 +15,7 @@
     "expo-haptics": "~57.0.3",
     "expo-linear-gradient": "~57.0.2",
     "expo-linking": "~57.0.10",
+    "expo-localization": "~57.0.2",
     "expo-router": "~57.0.21",
     "expo-splash-screen": "~57.0.9",
     "expo-status-bar": "~57.0.1",
@@ -57,11 +58,14 @@
     "lint": "expo lint",
     "doctor": "npx expo-doctor",
     "assets": "node scripts/generate-assets.mjs",
-    "verify": "npm run lint && npm run typecheck && npm run test:ci",
+    "verify": "bash scripts/verify-all.sh",
     "check:release": "tsx scripts/check-release-config.ts",
     "build:preview": "eas build --profile preview --platform all",
     "build:production": "npm run check:release && eas build --profile production --platform all",
-    "submit:production": "eas submit --profile production --platform all --latest"
+    "submit:production": "eas submit --profile production --platform all --latest",
+    "check:i18n": "node scripts/check-i18n.mjs",
+    "check:ui": "node scripts/check-ui-rules.mjs",
+    "verify:device": "bash scripts/verify-app.sh"
   },
   "overrides": {
     "react-dom": "19.2.0"

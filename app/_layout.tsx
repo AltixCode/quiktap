@@ -2,9 +2,11 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect } from 'react';
+import { I18nManager } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { isRTLLanguage, t } from '@/i18n';
 import { bootstrapAds } from '@/monetization/ads';
 import { shouldShowAds } from '@/monetization/entitlements';
 import { preloadInterstitial } from '@/monetization/interstitial';
@@ -12,6 +14,12 @@ import { usePremiumStore } from '@/store/usePremiumStore';
 import { ThemeProvider, useTheme } from '@/theme';
 
 void SplashScreen.preventAutoHideAsync();
+
+// Arabic and Persian must actually mirror the layout, not merely translate. This
+// runs at module scope because React Native reads the flag when the first view
+// is laid out — setting it from an effect leaves the first frame LTR.
+I18nManager.allowRTL(true);
+I18nManager.forceRTL(isRTLLanguage());
 
 function RootNavigator() {
   const { colors, isDark } = useTheme();
@@ -45,7 +53,7 @@ function RootNavigator() {
         }}
       >
         <Stack.Screen name="index" options={{ headerShown: false }} />
-        <Stack.Screen name="settings" options={{ title: 'Settings' }} />
+        <Stack.Screen name="settings" options={{ title: t('settingsTitle') }} />
         <Stack.Screen
           name="paywall"
           options={{ title: '', presentation: 'modal', headerShown: false }}

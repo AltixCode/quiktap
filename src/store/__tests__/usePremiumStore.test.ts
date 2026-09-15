@@ -11,7 +11,7 @@ jest.mock('@/monetization/config', () => ({
 }));
 
 const mocked = purchases as jest.Mocked<typeof purchases>;
-const CACHE_KEY = 'quiktap.entitlement.pro';
+const CACHE_KEY = 'quiktap.entitlement.remove_ads';
 
 const somePackage = { identifier: '$rc_lifetime' } as unknown as PurchasesPackage;
 
@@ -19,7 +19,7 @@ function reset() {
   usePremiumStore.setState({
     isPremium: false,
     isReady: false,
-    packages: [],
+    lifetime: null,
     isPurchasing: false,
     error: null,
   });
@@ -33,7 +33,7 @@ beforeEach(async () => {
   mocked.getCustomerInfo.mockResolvedValue(null);
   mocked.hasProEntitlement.mockReturnValue(false);
   mocked.getCurrentOffering.mockResolvedValue(null);
-  mocked.orderedPackages.mockReturnValue([]);
+  mocked.lifetimePackage.mockReturnValue(null);
   mocked.addCustomerInfoListener.mockReturnValue(() => {});
 });
 
@@ -147,10 +147,16 @@ describe('restore', () => {
 });
 
 describe('refreshOfferings', () => {
-  it('stores the ordered packages', async () => {
-    mocked.orderedPackages.mockReturnValue([somePackage]);
+  it('stores the single lifetime package', async () => {
+    mocked.lifetimePackage.mockReturnValue(somePackage);
     await usePremiumStore.getState().refreshOfferings();
-    expect(usePremiumStore.getState().packages).toEqual([somePackage]);
+    expect(usePremiumStore.getState().lifetime).toBe(somePackage);
+  });
+
+  it('leaves the paywall with nothing to sell when the offering carries no lifetime', async () => {
+    mocked.lifetimePackage.mockReturnValue(null);
+    await usePremiumStore.getState().refreshOfferings();
+    expect(usePremiumStore.getState().lifetime).toBeNull();
   });
 });
 

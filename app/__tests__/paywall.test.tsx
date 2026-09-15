@@ -6,23 +6,19 @@ import type { PurchasesPackage } from 'react-native-purchases';
 import Paywall from '../paywall';
 import { testRouter } from './testRouter';
 import { renderWithProviders } from '@/components/__tests__/renderWithProviders';
+import { t } from '@/i18n';
 import { usePremiumStore } from '@/store/usePremiumStore';
 
-function plan(identifier: string, price: number, period: string | null): PurchasesPackage {
-  return {
-    identifier,
-    product: { priceString: `$${price.toFixed(2)}`, price, subscriptionPeriod: period },
-  } as unknown as PurchasesPackage;
-}
-
-const LIFETIME = plan('$rc_lifetime', 3.99, null);
-const MONTHLY = plan('$rc_monthly', 1.99, 'P1M');
+const LIFETIME = {
+  identifier: '$rc_lifetime',
+  product: { priceString: '$3.99', price: 3.99, subscriptionPeriod: null },
+} as unknown as PurchasesPackage;
 
 function seed(over: Record<string, unknown> = {}) {
   usePremiumStore.setState({
     isPremium: false,
     isReady: true,
-    packages: [],
+    lifetime: null,
     isPurchasing: false,
     error: null,
     refreshOfferings: jest.fn().mockResolvedValue(undefined),
@@ -37,62 +33,79 @@ beforeEach(() => {
   seed();
 });
 
-afterEach(() => {
-  jest.restoreAllMocks();
-});
+// No `jest.restoreAllMocks()` here. It restores every spy in the process, not
+// only this file's — including ones the renderer itself relies on — and the
+// next test's tree then renders and is immediately torn down, which surfaces as
+// "unable to find an element" on a screen that plainly renders it in isolation.
+// `jest.clearAllMocks()` in beforeEach resets call counts, and each test that
+// needs a spy installs its own.
 
 describe('Paywall', () => {
-  it('shows a loading state until the offering arrives', async () => {
-    const { getByText } = await renderWithProviders(<Paywall />);
-    expect(getByText('Loading plans…')).toBeTruthy();
+  it('waits for the price rather than showing a button that cannot be priced', async () => {
+    const { getByText, queryByText } = await renderWithProviders(<Paywall />);
+    expect(getByText(t('loadingPrice'))).toBeTruthy();
+    expect(queryByText(t('lifetimeAccess', { price: '$3.99' }))).toBeNull();
   });
 
-  it('marks the first plan as best value and buys it on tap', async () => {
+  it('offers exactly one purchase, priced, and buys it on tap', async () => {
     const purchase = jest.fn().mockResolvedValue('purchased');
-    seed({ packages: [LIFETIME, MONTHLY], purchase });
+    seed({ lifetime: LIFETIME, purchase });
     const { getByText } = await renderWithProviders(<Paywall />);
-    expect(getByText('BEST VALUE')).toBeTruthy();
-    fireEvent.press(getByText('Lifetime'));
+    await fireEvent.press(getByText(t('lifetimeAccess', { price: '$3.99' })));
     expect(purchase).toHaveBeenCalledWith(LIFETIME);
   });
 
-  it('shows the saving a yearly plan offers against the monthly one', async () => {
-    seed({ packages: [plan('$rc_annual', 9.99, 'P1Y'), MONTHLY] });
+  it('states the purchase is one-time — the portfolio never sells subscriptions', async () => {
+    seed({ lifetime: LIFETIME });
     const { getByText } = await renderWithProviders(<Paywall />);
-    expect(getByText(/save 58%/)).toBeTruthy();
+    expect(getByText(t('oneTimePayment'))).toBeTruthy();
+    expect(getByText(t('antiSubHeadline'))).toBeTruthy();
   });
 
-  it('closes itself for a user who already owns Pro', async () => {
+  it('lists what the purchase unlocks', async () => {
+    const { getByText } = await renderWithProviders(<Paywall />);
+    expect(getByText(t('feat1Title'))).toBeTruthy();
+    expect(getByText(t('feat4Desc'))).toBeTruthy();
+  });
+
+  it('closes itself for a user who already owns it', async () => {
     seed({ isPremium: true });
     await renderWithProviders(<Paywall />);
     await waitFor(() => expect(testRouter.back).toHaveBeenCalled());
   });
 
   it('surfaces a purchase error', async () => {
-    seed({ packages: [LIFETIME], error: 'card declined' });
+    seed({ lifetime: LIFETIME, error: t('purchaseFailed') });
     const { getByText } = await renderWithProviders(<Paywall />);
-    expect(getByText('card declined')).toBeTruthy();
+    expect(getByText(t('purchaseFailed'))).toBeTruthy();
   });
 
   it('offers restore — App Review tests this path on a fresh install', async () => {
     const restore = jest.fn().mockResolvedValue('none');
     seed({ restore });
     const { getByText } = await renderWithProviders(<Paywall />);
-    fireEvent.press(getByText('Restore purchases'));
+    await fireEvent.press(getByText(t('restorePurchases')));
     expect(restore).toHaveBeenCalled();
   });
 
   it('closes on the close control', async () => {
     const { getByLabelText } = await renderWithProviders(<Paywall />);
-    fireEvent.press(getByLabelText('Close'));
+    await fireEvent.press(getByLabelText(t('close')));
     expect(testRouter.back).toHaveBeenCalled();
   });
 
   it('links to terms and privacy, which both stores require on a paywall', async () => {
     const open = jest.spyOn(Linking, 'openURL').mockResolvedValue(true);
+    const { getByLabelText } = await renderWithProviders(<Paywall />);
+    await fireEvent.press(getByLabelText(t('termsOfUse')));
+    await fireEvent.press(getByLabelText(t('privacyPolicy')));
+    // Awaited for the same reason as the settings link test: an unsettled
+    // promise from the previous test unmounts the next one's tree.
+    await waitFor(() => expect(open).toHaveBeenCalledTimes(2));
+  });
+
+  it('discloses that ads are what make the app free', async () => {
     const { getByText } = await renderWithProviders(<Paywall />);
-    fireEvent.press(getByText('Terms'));
-    fireEvent.press(getByText('Privacy'));
-    expect(open).toHaveBeenCalledTimes(2);
+    expect(getByText(t('adsDisclosure'))).toBeTruthy();
   });
 });

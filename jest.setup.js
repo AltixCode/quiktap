@@ -1,6 +1,16 @@
 /* eslint-env jest */
 // RNTL v13+ registers its matchers automatically via the jest-expo preset.
 
+// RNTL 14's automatic cleanup is ASYNC. Left to run on its own it can unmount
+// the NEXT test's freshly rendered tree, which surfaces as "unable to find an
+// element" on a screen that plainly renders it in isolation. Awaiting it here
+// — registered before any suite's own afterEach, so it runs last — makes the
+// teardown finish inside the test that caused it.
+const { cleanup } = require('@testing-library/react-native');
+afterEach(async () => {
+  await cleanup();
+});
+
 process.env.EXPO_OS = process.env.EXPO_OS || 'ios';
 
 // Reanimated's worklet runtime is native-only. The shipped mock renders the
@@ -58,6 +68,11 @@ jest.mock('react-native-purchases', () => ({
     removeCustomerInfoUpdateListener: jest.fn(),
   },
   LOG_LEVEL: { WARN: 'WARN', DEBUG: 'DEBUG' },
+}));
+
+jest.mock('expo-localization', () => ({
+  getLocales: jest.fn(() => [{ languageCode: 'en', regionCode: 'US' }]),
+  getCalendars: jest.fn(() => []),
 }));
 
 jest.mock('expo-tracking-transparency', () => ({

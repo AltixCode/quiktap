@@ -39,9 +39,10 @@ describe('missingReleaseConfigFrom', () => {
     expect(missingReleaseConfigFrom(env)).toEqual([RELEASE_ENV_KEYS[0]]);
   });
 
-  it('covers both ad networks and both stores', () => {
-    // A shrinking key list is a silent regression: it would let a build ship
-    // missing exactly the identifier this check exists to catch.
-    expect(RELEASE_ENV_KEYS).toHaveLength(8);
+  it('covers all ten release identifiers', () => {
+    // Two AdMob app ids, six ad units, two RevenueCat keys. A shrinking key list
+    // is a silent regression: it would let a build ship missing exactly the
+    // identifier this check exists to catch.
+    expect(RELEASE_ENV_KEYS).toHaveLength(10);
   });
 });

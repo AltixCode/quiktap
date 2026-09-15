@@ -4,21 +4,29 @@ import { ActivityIndicator, Linking, Pressable, ScrollView, View } from 'react-n
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button, Text } from '@/components/ui';
+import { t } from '@/i18n';
 import { PRIVACY_POLICY_URL, TERMS_URL } from '@/monetization/config';
-import { summarizePlan, type PlanLike } from '@/monetization/entitlements';
-import { toPlanLike } from '@/monetization/purchases';
 import { usePremiumStore } from '@/store/usePremiumStore';
 import { useTheme } from '@/theme';
 
-/** What a purchase unlocks. Edited per app; the screen itself is shared. */
-const BENEFITS = ["Every test type, not just the daily three","No ads, ever","Unlimited practice runs","Full history, percentile trends and export"];
+/**
+ * The one purchase this app sells: a lifetime non-consumable that removes the ads and unlocks
+ * everything. There is deliberately no plan picker — a second option would be a subscription,
+ * and the portfolio does not sell those.
+ */
+const BENEFITS = [
+  { title: 'feat1Title', desc: 'feat1Desc' },
+  { title: 'feat2Title', desc: 'feat2Desc' },
+  { title: 'feat3Title', desc: 'feat3Desc' },
+  { title: 'feat4Title', desc: 'feat4Desc' },
+] as const;
 
 export default function Paywall() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colors, spacing, radius } = useTheme();
 
-  const packages = usePremiumStore((s) => s.packages);
+  const lifetime = usePremiumStore((s) => s.lifetime);
   const isPremium = usePremiumStore((s) => s.isPremium);
   const isPurchasing = usePremiumStore((s) => s.isPurchasing);
   const error = usePremiumStore((s) => s.error);
@@ -35,118 +43,126 @@ export default function Paywall() {
     if (isPremium) router.back();
   }, [isPremium, router]);
 
-  const monthly = packages.map(toPlanLike).find((p: PlanLike) => p.periodUnit === 'MONTH');
+  const price = lifetime?.product.priceString;
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: insets.top }}>
       <View style={{ alignItems: 'flex-end', padding: spacing.base }}>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Close"
+          accessibilityLabel={t('close')}
           hitSlop={12}
           onPress={() => router.back()}
           style={{ minWidth: 44, minHeight: 44, alignItems: 'flex-end', justifyContent: 'center' }}
         >
           <Text variant="body" tone="muted">
-            Close
+            {t('close')}
           </Text>
         </Pressable>
       </View>
 
       <ScrollView contentContainerStyle={{ padding: spacing.xl, paddingBottom: spacing['3xl'] }}>
-        <Text variant="display">Quiktap Pro</Text>
-        <Text variant="body" tone="muted" style={{ marginTop: spacing.sm }}>
-          How fast are your reflexes today? Thirty seconds to find out.
-        </Text>
+        <Text variant="display">{t('paywallTitle')}</Text>
 
-        <View style={{ marginTop: spacing.xl, gap: spacing.md }}>
+        <View
+          style={{
+            marginTop: spacing.lg,
+            padding: spacing.base,
+            borderRadius: radius.lg,
+            backgroundColor: colors.surface,
+            borderWidth: 1,
+            borderColor: colors.border,
+          }}
+        >
+          <Text variant="micro" tone="accent">
+            {t('antiSubTitle')}
+          </Text>
+          <Text variant="body" style={{ marginTop: spacing.xs }}>
+            {t('antiSubHeadline')}
+          </Text>
+        </View>
+
+        <View style={{ marginTop: spacing.xl, gap: spacing.lg }}>
           {BENEFITS.map((benefit) => (
-            <View key={benefit} style={{ flexDirection: 'row', gap: spacing.md, alignItems: 'flex-start' }}>
-              <Text variant="bodyStrong" style={{ color: colors.accent }}>
+            <View key={benefit.title} style={{ flexDirection: 'row', gap: spacing.md }}>
+              <Text variant="bodyStrong" tone="accent">
                 ✓
               </Text>
-              <Text variant="body" style={{ flex: 1 }}>
-                {benefit}
-              </Text>
+              <View style={{ flex: 1 }}>
+                <Text variant="bodyStrong">{t(benefit.title)}</Text>
+                <Text variant="caption" tone="muted" style={{ marginTop: 2 }}>
+                  {t(benefit.desc)}
+                </Text>
+              </View>
             </View>
           ))}
         </View>
 
-        <View style={{ marginTop: spacing['2xl'], gap: spacing.md }}>
-          {packages.length === 0 ? (
+        <View style={{ marginTop: spacing['2xl'] }}>
+          {lifetime ? (
+            <Button
+              label={price ? t('lifetimeAccess', { price }) : t('lifetimeAccessPlain')}
+              size="lg"
+              fullWidth
+              loading={isPurchasing}
+              onPress={() => void purchase(lifetime)}
+            />
+          ) : (
             <View style={{ padding: spacing.xl, alignItems: 'center' }}>
               <ActivityIndicator color={colors.textMuted} />
               <Text variant="caption" tone="muted" style={{ marginTop: spacing.md }}>
-                Loading plans…
+                {t('loadingPrice')}
               </Text>
             </View>
-          ) : (
-            packages.map((pkg, index) => {
-              const summary = summarizePlan(toPlanLike(pkg), monthly);
-              const isBest = index === 0;
-              return (
-                <Pressable
-                  key={pkg.identifier}
-                  accessibilityRole="button"
-                  disabled={isPurchasing}
-                  onPress={() => void purchase(pkg)}
-                  style={{
-                    borderWidth: isBest ? 2 : 1,
-                    borderColor: isBest ? colors.accent : colors.border,
-                    borderRadius: radius.lg,
-                    padding: spacing.lg,
-                    minHeight: 64,
-                    backgroundColor: colors.surface,
-                    opacity: isPurchasing ? 0.6 : 1,
-                  }}
-                >
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <View style={{ flex: 1 }}>
-                      <Text variant="bodyStrong">{summary.title}</Text>
-                      <Text variant="caption" tone="muted">
-                        {summary.cadence}
-                        {summary.savingsPercent ? ` · save ${summary.savingsPercent}%` : ''}
-                      </Text>
-                    </View>
-                    <Text variant="bodyStrong">{pkg.product.priceString}</Text>
-                  </View>
-                  {isBest ? (
-                    <Text variant="micro" style={{ color: colors.accent, marginTop: spacing.xs }}>
-                      BEST VALUE
-                    </Text>
-                  ) : null}
-                </Pressable>
-              );
-            })
           )}
+          <Text variant="caption" tone="muted" align="center" style={{ marginTop: spacing.md }}>
+            {t('oneTimePayment')}
+          </Text>
         </View>
 
         {error ? (
-          <Text variant="caption" style={{ color: colors.danger, marginTop: spacing.base }}>
+          <Text variant="caption" tone="danger" align="center" style={{ marginTop: spacing.base }}>
             {error}
           </Text>
         ) : null}
 
         <Button
-          label="Restore purchases"
+          label={t('restorePurchases')}
           variant="ghost"
+          fullWidth
           onPress={() => void restore()}
           style={{ marginTop: spacing.lg }}
         />
 
-        <Text variant="micro" tone="faint" style={{ marginTop: spacing.xl, textAlign: 'center' }}>
-          Payment is charged to your store account. Subscriptions renew unless cancelled at least
-          24 hours before the period ends; manage them in your account settings.
+        <Text variant="micro" tone="faint" align="center" style={{ marginTop: spacing.xl }}>
+          {t('adsDisclosure')}
         </Text>
-        <View style={{ flexDirection: 'row', justifyContent: 'center', gap: spacing.lg, marginTop: spacing.md }}>
-          <Pressable onPress={() => void Linking.openURL(TERMS_URL)} hitSlop={12}>
+        <View
+          style={{
+            flexDirection: 'row',
+            justifyContent: 'center',
+            gap: spacing.lg,
+            marginTop: spacing.md,
+          }}
+        >
+          <Pressable
+            accessibilityRole="link"
+            accessibilityLabel={t('termsOfUse')}
+            hitSlop={12}
+            onPress={() => void Linking.openURL(TERMS_URL)}
+          >
             <Text variant="micro" tone="faint">
-              Terms
+              {t('termsOfUse')}
             </Text>
           </Pressable>
-          <Pressable onPress={() => void Linking.openURL(PRIVACY_POLICY_URL)} hitSlop={12}>
+          <Pressable
+            accessibilityRole="link"
+            accessibilityLabel={t('privacyPolicy')}
+            hitSlop={12}
+            onPress={() => void Linking.openURL(PRIVACY_POLICY_URL)}
+          >
             <Text variant="micro" tone="faint">
-              Privacy
+              {t('privacyPolicy')}
             </Text>
           </Pressable>
         </View>

@@ -39,7 +39,7 @@ describe('Button', () => {
   it('calls onPress and fires haptic feedback', async () => {
     const onPress = jest.fn();
     const { getByText } = await renderWithProviders(<Button label="Go" onPress={onPress} />);
-    fireEvent.press(getByText('Go'));
+    await fireEvent.press(getByText('Go'));
     expect(onPress).toHaveBeenCalledTimes(1);
     expect(Haptics.impactAsync).toHaveBeenCalled();
   });
@@ -47,7 +47,7 @@ describe('Button', () => {
   it('does not fire while disabled', async () => {
     const onPress = jest.fn();
     const { getByText } = await renderWithProviders(<Button label="Go" disabled onPress={onPress} />);
-    fireEvent.press(getByText('Go'));
+    await fireEvent.press(getByText('Go'));
     expect(onPress).not.toHaveBeenCalled();
   });
 
@@ -57,7 +57,7 @@ describe('Button', () => {
       <Button label="Saving" loading onPress={onPress} />,
     );
     const button = getByLabelText('Saving');
-    fireEvent.press(button);
+    await fireEvent.press(button);
     expect(onPress).not.toHaveBeenCalled();
     expect(button.props.accessibilityState).toMatchObject({ busy: true, disabled: true });
   });
@@ -90,7 +90,7 @@ describe('IconButton', () => {
     const { getByLabelText } = await renderWithProviders(
       <IconButton icon="x" accessibilityLabel="Close" onPress={onPress} />,
     );
-    fireEvent.press(getByLabelText('Close'));
+    await fireEvent.press(getByLabelText('Close'));
     expect(onPress).toHaveBeenCalled();
     expect(Haptics.selectionAsync).toHaveBeenCalled();
   });
@@ -101,7 +101,7 @@ describe('IconButton', () => {
       <IconButton icon="x" accessibilityLabel="Close" disabled onPress={onPress} />,
     );
     const button = getByLabelText('Close');
-    fireEvent.press(button);
+    await fireEvent.press(button);
     expect(onPress).not.toHaveBeenCalled();
     expect(button.props.accessibilityState).toMatchObject({ disabled: true });
   });

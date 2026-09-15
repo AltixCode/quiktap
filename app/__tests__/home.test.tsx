@@ -4,6 +4,7 @@ import React from 'react';
 import Home from '../index';
 import { testRouter } from './testRouter';
 import { renderWithProviders } from '@/components/__tests__/renderWithProviders';
+import { t } from '@/i18n';
 import { useAdsConsentStore } from '@/store/useAdsConsentStore';
 import { usePremiumStore } from '@/store/usePremiumStore';
 
@@ -13,15 +14,18 @@ beforeEach(() => {
   useAdsConsentStore.setState({ consent: { canServeAds: true, offerPrivacyOptions: false } });
 });
 
-afterEach(() => {
-  jest.restoreAllMocks();
-});
+// No `jest.restoreAllMocks()` here. It restores every spy in the process, not
+// only this file's — including ones the renderer itself relies on — and the
+// next test's tree then renders and is immediately torn down, which surfaces as
+// "unable to find an element" on a screen that plainly renders it in isolation.
+// `jest.clearAllMocks()` in beforeEach resets call counts, and each test that
+// needs a spy installs its own.
 
 describe('Home', () => {
   it('renders the app name and routes to settings', async () => {
     const { getByText } = await renderWithProviders(<Home />);
-    expect(getByText('Quiktap')).toBeTruthy();
-    fireEvent.press(getByText('Settings'));
+    expect(getByText(t('appName'))).toBeTruthy();
+    await fireEvent.press(getByText(t('settingsTitle')));
     expect(testRouter.push).toHaveBeenCalledWith('/settings');
   });
 

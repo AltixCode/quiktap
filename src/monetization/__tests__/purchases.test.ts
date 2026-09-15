@@ -7,7 +7,7 @@ import {
   getCurrentOffering,
   getCustomerInfo,
   hasProEntitlement,
-  orderedPackages,
+  lifetimePackage,
   purchasePackage,
   restorePurchases,
   toPlanLike,
@@ -75,16 +75,25 @@ describe('toPlanLike', () => {
   });
 });
 
-describe('orderedPackages', () => {
-  it('orders an offering best value first', () => {
+describe('lifetimePackage', () => {
+  it('picks the lifetime package out of an offering', () => {
     const offering = {
       availablePackages: [pkg('$rc_monthly', 1.99, 'P1M'), pkg('$rc_lifetime', 3.99, null)],
     } as unknown as PurchasesOffering;
-    expect(orderedPackages(offering).map((p) => p.identifier)).toEqual(['$rc_lifetime', '$rc_monthly']);
+    expect(lifetimePackage(offering)?.identifier).toBe('$rc_lifetime');
   });
 
-  it('returns nothing when there is no offering', () => {
-    expect(orderedPackages(null)).toEqual([]);
+  it('returns null rather than falling back to a subscription', () => {
+    // A subscription reaching the paywall would be a portfolio-wide policy break.
+    // Unrenderable beats discouraged.
+    const offering = {
+      availablePackages: [pkg('$rc_monthly', 1.99, 'P1M')],
+    } as unknown as PurchasesOffering;
+    expect(lifetimePackage(offering)).toBeNull();
+  });
+
+  it('returns null when there is no offering', () => {
+    expect(lifetimePackage(null)).toBeNull();
   });
 });
 

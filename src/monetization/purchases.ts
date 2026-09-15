@@ -5,7 +5,7 @@ import Purchases, {
   type PurchasesPackage,
 } from 'react-native-purchases';
 
-import { PRO_ENTITLEMENT, sortPlans, type PlanLike } from './entitlements';
+import { PRO_ENTITLEMENT, selectLifetime, type PlanLike } from './entitlements';
 import { isPurchasesConfigured, revenueCatApiKey } from './config';
 
 /**
@@ -74,13 +74,17 @@ function periodUnitOf(period: string): string | null {
   return null;
 }
 
-/** Offering packages ordered best-value first. */
-export function orderedPackages(offering: PurchasesOffering | null): PurchasesPackage[] {
-  if (!offering) return [];
+/**
+ * The one lifetime package this app sells, or null.
+ *
+ * Returning a single package rather than a list is deliberate: it makes a subscription that
+ * somehow reached the offering unrenderable instead of merely discouraged.
+ */
+export function lifetimePackage(offering: PurchasesOffering | null): PurchasesPackage | null {
+  if (!offering) return null;
   const byId = new Map(offering.availablePackages.map((p) => [p.identifier, p]));
-  return sortPlans(offering.availablePackages.map(toPlanLike))
-    .map((plan) => byId.get(plan.identifier))
-    .filter((p): p is PurchasesPackage => p !== undefined);
+  const plan = selectLifetime(offering.availablePackages.map(toPlanLike));
+  return plan ? (byId.get(plan.identifier) ?? null) : null;
 }
 
 export interface PurchaseResult {

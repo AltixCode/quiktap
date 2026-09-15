@@ -88,7 +88,7 @@ const config: ExpoConfig = {
     'expo-router',
     // iOS 26+ refuses to launch apps that have not adopted the UIScene lifecycle, which
     // Expo SDK 57 / RN 0.86 do not yet generate. Drop this once the template does it itself.
-    './plugins/withIOSSceneLifecycle',
+    './plugins/withUIScene',
     [
       'expo-splash-screen',
       {
