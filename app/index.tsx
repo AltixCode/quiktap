@@ -147,6 +147,7 @@ export default function Home() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView
+        style={{ flex: 1 }}
         contentContainerStyle={{
           paddingTop: insets.top + spacing.base,
           paddingHorizontal: spacing.base,
