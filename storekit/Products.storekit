@@ -1,0 +1,35 @@
+{
+  "identifier": "8DFA4686-739C-4BE9-A21C-B4260DA11EFD",
+  "nonRenewingSubscriptions": [],
+  "products": [
+    {
+      "displayPrice": "4.99",
+      "familyShareable": false,
+      "internalID": "77048284-0CF4-4B65-9E3E-78396D6A0E58",
+      "localizations": [
+        {
+          "description": "quiktap remove ads lifetime unlock",
+          "displayName": "quiktap remove ads",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "com.altixcode.quiktap.removeads",
+      "referenceName": "quiktap remove ads",
+      "type": "NonConsumable"
+    }
+  ],
+  "settings": {
+    "_applicationInternalID": "",
+    "_developerTeamID": "",
+    "_failTransactionsEnabled": false,
+    "_lastSynchronizedDate": 0,
+    "_locale": "en_US",
+    "_storefront": "USA",
+    "_storeKitErrors": []
+  },
+  "subscriptionGroups": [],
+  "version": {
+    "major": 4,
+    "minor": 0
+  }
+}
