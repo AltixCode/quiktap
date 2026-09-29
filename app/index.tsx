@@ -1,13 +1,14 @@
-import Feather from '@expo/vector-icons/Feather';
-import * as Haptics from 'expo-haptics';
-import { useRouter } from 'expo-router';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Feather from "@expo/vector-icons/Feather";
+import * as Haptics from "expo-haptics";
+import { useRouter } from "expo-router";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { BannerAdSlot } from '@/components/BannerAdSlot';
-import { Button, Card, Text } from '@/components/ui';
-import { t, type TranslationKey } from '@/i18n';
+import { BannerAdSlot } from "@/components/BannerAdSlot";
+import { Button, Card, Text } from "@/components/ui";
+import { useSoundEffects } from "@/hooks/useSoundEffects";
+import { t, type TranslationKey } from "@/i18n";
 import {
   FREE_HISTORY,
   MODES,
@@ -18,24 +19,25 @@ import {
   scoreSession,
   targetPositions,
   type Tap,
-} from '@/logic/reaction';
-import { noteGameFinished } from '@/monetization/pacing';
-import { usePremiumStore } from '@/store/usePremiumStore';
-import { useRoundStore } from '@/store/useRoundStore';
-import { MIN_TOUCH_TARGET, useTheme, withAlpha } from '@/theme';
-import { useTabletColumn } from '@/theme/useTabletColumn';
+} from "@/logic/reaction";
+import { noteGameFinished } from "@/monetization/pacing";
+import { usePremiumStore } from "@/store/usePremiumStore";
+import { useRoundStore } from "@/store/useRoundStore";
+import { MIN_TOUCH_TARGET, useTheme, withAlpha } from "@/theme";
+import { useTabletColumn } from "@/theme/useTabletColumn";
 
 const TARGET_RADIUS = 38;
 /** The playfield redraws at this rate while a round is running. */
 const TICK_MS = 100;
 
-type Phase = 'idle' | 'waiting' | 'live' | 'over';
+type Phase = "idle" | "waiting" | "live" | "over";
 
 export default function Home() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colors, spacing, radius } = useTheme();
   const tabletColumn = useTabletColumn();
+  const playSound = useSoundEffects();
 
   const isPremium = usePremiumStore((s) => s.isPremium);
   const isReady = usePremiumStore((s) => s.isReady);
@@ -46,7 +48,7 @@ export default function Home() {
   const history = useRoundStore((s) => s.history);
   const personalBestMs = useRoundStore((s) => s.personalBestMs);
 
-  const [phase, setPhase] = useState<Phase>('idle');
+  const [phase, setPhase] = useState<Phase>("idle");
   const [seed, setSeed] = useState(() => Math.floor(Math.random() * 1e9));
   const [index, setIndex] = useState(0);
   const [taps, setTaps] = useState<Tap[]>([]);
@@ -69,7 +71,7 @@ export default function Home() {
     void hydrate();
   }, [hydrate]);
 
-  const running = phase === 'waiting' || phase === 'live';
+  const running = phase === "waiting" || phase === "live";
 
   // One ticker drives both the countdown and the end of the round.
   //
@@ -84,7 +86,7 @@ export default function Home() {
       setNow(at);
       if (at < endsAt) return;
       clearInterval(id);
-      setPhase('over');
+      setPhase("over");
       record(scoreSession(tapsRef.current));
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       // `at` rather than a second Date.now(): the policy and the record must
@@ -96,11 +98,11 @@ export default function Home() {
 
   // A target becomes live after its scheduled gap.
   useEffect(() => {
-    if (phase !== 'waiting') return;
+    if (phase !== "waiting") return;
     const gap = nextTargetAt(seed, index);
     const id = setTimeout(() => {
       appearedAt.current = Date.now();
-      setPhase('live');
+      setPhase("live");
     }, gap);
     return () => clearTimeout(id);
   }, [phase, seed, index]);
@@ -113,7 +115,7 @@ export default function Home() {
     setTooSoon(false);
     setEndsAt(Date.now() + ROUND_SECONDS * 1000);
     setNow(Date.now());
-    setPhase('waiting');
+    setPhase("waiting");
   }, []);
 
   const hit = () => {
@@ -122,8 +124,10 @@ export default function Home() {
     setTaps(tapsRef.current);
     setIndex((i) => i + 1);
     setTooSoon(false);
+    playSound("tap");
+    playSound("pop");
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setPhase('waiting');
+    setPhase("waiting");
   };
 
   const early = () => {
@@ -132,19 +136,27 @@ export default function Home() {
     tapsRef.current = [...tapsRef.current, { reactionMs: -1, hit: false }];
     setTaps(tapsRef.current);
     setTooSoon(true);
+    playSound("tap");
+    playSound("fail");
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
   };
 
   const pickMode = (id: string) => {
-    if (selectMode(id, isPremium) === 'locked') router.push('/paywall');
+    if (selectMode(id, isPremium) === "locked") router.push("/paywall");
   };
 
   const score = scoreSession(taps);
   const best = personalBestMs();
   const rows = history(isPremium);
   const secondsLeft = Math.max(0, Math.ceil((endsAt - now) / 1000));
-  const position = targetPositions(seed, index, field.width, field.height, TARGET_RADIUS);
-  const isGoSignal = mode === 'gosignal';
+  const position = targetPositions(
+    seed,
+    index,
+    field.width,
+    field.height,
+    TARGET_RADIUS,
+  );
+  const isGoSignal = mode === "gosignal";
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
@@ -155,19 +167,19 @@ export default function Home() {
           paddingHorizontal: spacing.base,
           paddingBottom: spacing.xl,
           gap: spacing.base,
-        
+
           ...tabletColumn,
         }}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.titleRow}>
           <Text variant="title" style={styles.grow}>
-            {t('appName')}
+            {t("appName")}
           </Text>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={t('settingsTitle')}
-            onPress={() => router.push('/settings')}
+            accessibilityLabel={t("settingsTitle")}
+            onPress={() => router.push("/settings")}
             hitSlop={8}
             style={styles.iconSlot}
           >
@@ -187,7 +199,9 @@ export default function Home() {
                 <Pressable
                   key={m.id}
                   accessibilityRole="button"
-                  accessibilityLabel={allowed ? name : t('modeLocked', { name })}
+                  accessibilityLabel={
+                    allowed ? name : t("modeLocked", { name })
+                  }
                   accessibilityState={{ selected: chosen, disabled: !allowed }}
                   onPress={() => pickMode(m.id)}
                   style={[
@@ -197,7 +211,9 @@ export default function Home() {
                       paddingHorizontal: spacing.base,
                       borderWidth: StyleSheet.hairlineWidth,
                       borderColor: chosen ? colors.accent : colors.border,
-                      backgroundColor: chosen ? withAlpha(colors.accent, 0.16) : colors.surface,
+                      backgroundColor: chosen
+                        ? withAlpha(colors.accent, 0.16)
+                        : colors.surface,
                     },
                   ]}
                 >
@@ -206,7 +222,9 @@ export default function Home() {
                       taking the name to 2.40:1 -- while the lock icon beside it
                       already said everything the dimming was trying to say. */}
                   <Text variant="body">{name}</Text>
-                  {allowed ? null : <Feather name="lock" size={14} color={colors.textMuted} />}
+                  {allowed ? null : (
+                    <Feather name="lock" size={14} color={colors.textMuted} />
+                  )}
                 </Pressable>
               );
             })}
@@ -215,9 +233,15 @@ export default function Home() {
 
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={phase === 'live' ? t('tapNow') : t('waitForGreen')}
+          accessibilityLabel={
+            phase === "live"
+              ? t("tapNow")
+              : isGoSignal
+                ? t("waitForGreen")
+                : t("waitForTarget")
+          }
           disabled={!running}
-          onPress={phase === 'live' ? hit : early}
+          onPress={phase === "live" ? hit : early}
           onLayout={(e) =>
             setField({
               width: e.nativeEvent.layout.width,
@@ -228,12 +252,15 @@ export default function Home() {
             styles.field,
             {
               borderRadius: radius.lg,
-              backgroundColor: phase === 'live' && isGoSignal ? colors.success : colors.surface,
+              backgroundColor:
+                phase === "live" && isGoSignal
+                  ? colors.success
+                  : colors.surface,
               borderColor: colors.border,
             },
           ]}
         >
-          {phase === 'live' && !isGoSignal ? (
+          {phase === "live" && !isGoSignal ? (
             <View
               style={[
                 styles.target,
@@ -241,7 +268,16 @@ export default function Home() {
                   left: position.x - TARGET_RADIUS,
                   top: position.y - TARGET_RADIUS,
                   borderRadius: radius.full,
-                  backgroundColor: colors.accent,
+                  // The Targets mode's own copy is "Tap each circle the
+                  // moment it appears" -- no colour promise -- but the
+                  // waiting-phase hint text below used to read "Wait for
+                  // green…" regardless of mode, and this circle rendered in
+                  // the theme's plain accent colour rather than green. A
+                  // TestFlight tester saw exactly what the code drew: never a
+                  // green circle. Go-signal mode already flashed the whole
+                  // field genuinely green (below); this makes Targets mode's
+                  // circle match its own now-accurate hint text instead.
+                  backgroundColor: colors.success,
                 },
               ]}
             />
@@ -250,34 +286,46 @@ export default function Home() {
             <Text variant="body" tone="muted">
               {t(MODES.find((m) => m.id === mode)?.descKey as TranslationKey)}
             </Text>
-          ) : phase === 'waiting' ? (
-            <Text variant="body" tone="muted">
-              {tooSoon ? t('tooSoon') : t('waitForGreen')}
-            </Text>
+          ) : phase === "waiting" ? (
+            tooSoon ? (
+              <Text variant="body" tone="muted">
+                {t("tooSoon")}
+              </Text>
+            ) : index === 0 ? (
+              // Shown once, before the first target of the round -- not after
+              // every tap. A tester found the repeated "Wait for green…"
+              // between every target noisy once the mechanic was understood.
+              <Text variant="body" tone="muted">
+                {isGoSignal ? t("waitForGreen") : t("waitForTarget")}
+              </Text>
+            ) : null
           ) : isGoSignal ? (
-            <Text variant="heading">{t('tapNow')}</Text>
+            <Text variant="heading">{t("tapNow")}</Text>
           ) : null}
         </Pressable>
 
-        {phase === 'over' ? (
+        {phase === "over" ? (
           <Card>
-            <Text variant="heading">{t('roundOver')}</Text>
-            <Text variant="display">{t(gradeFor(score.averageMs).key as TranslationKey)}</Text>
-            <Text variant="body">
-              {t('averageLabel')}: {score.averageMs} ms
+            <Text variant="heading">{t("roundOver")}</Text>
+            <Text variant="display">
+              {t(gradeFor(score.averageMs).key as TranslationKey)}
             </Text>
             <Text variant="body">
-              {t('bestLabel')}: {score.bestMs} ms
+              {t("averageLabel")}: {score.averageMs} ms
+            </Text>
+            <Text variant="body">
+              {t("bestLabel")}: {score.bestMs} ms
             </Text>
             <Text variant="caption" tone="muted">
-              {t('hitsLabel')}: {score.hits} · {t('missesLabel')}: {score.misses}
+              {t("hitsLabel")}: {score.hits} · {t("missesLabel")}:{" "}
+              {score.misses}
             </Text>
           </Card>
         ) : null}
 
         {running ? null : (
           <Button
-            label={phase === 'over' ? t('againCta') : t('startCta')}
+            label={phase === "over" ? t("againCta") : t("startCta")}
             icon="zap"
             onPress={start}
           />
@@ -285,16 +333,16 @@ export default function Home() {
 
         {best === null ? null : (
           <Text variant="caption" tone="muted">
-            {t('personalBest', { ms: best })}
+            {t("personalBest", { ms: best })}
           </Text>
         )}
 
         <Text variant="heading" style={{ marginTop: spacing.base }}>
-          {t('historyTitle')}
+          {t("historyTitle")}
         </Text>
         {rows.length === 0 ? (
           <Text variant="body" tone="muted">
-            {t('noRounds')}
+            {t("noRounds")}
           </Text>
         ) : (
           rows.slice(0, 10).map((r) => (
@@ -312,7 +360,7 @@ export default function Home() {
         )}
         {isPremium ? null : (
           <Text variant="caption" tone="muted">
-            {t('historyLocked', { n: FREE_HISTORY })}
+            {t("historyLocked", { n: FREE_HISTORY })}
           </Text>
         )}
       </ScrollView>
@@ -322,25 +370,34 @@ export default function Home() {
 }
 
 const styles = StyleSheet.create({
-  titleRow: { flexDirection: 'row', alignItems: 'center' },
+  titleRow: { flexDirection: "row", alignItems: "center" },
   grow: { flex: 1 },
   iconSlot: {
     minWidth: MIN_TOUCH_TARGET,
     minHeight: MIN_TOUCH_TARGET,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
-  chipRow: { flexDirection: 'row', flexWrap: 'wrap' },
-  chip: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: MIN_TOUCH_TARGET },
+  chipRow: { flexDirection: "row", flexWrap: "wrap" },
+  chip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    minHeight: MIN_TOUCH_TARGET,
+  },
   field: {
     // Square, sized from the width it is given. A fixed height left a dead band
     // below the controls on a large screen, and the targets are positioned from
     // the measured layout so they follow whatever size it ends up.
     aspectRatio: 1,
     borderWidth: StyleSheet.hairlineWidth,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
-  target: { position: 'absolute', width: TARGET_RADIUS * 2, height: TARGET_RADIUS * 2 },
-  row: { flexDirection: 'row', alignItems: 'center' },
+  target: {
+    position: "absolute",
+    width: TARGET_RADIUS * 2,
+    height: TARGET_RADIUS * 2,
+  },
+  row: { flexDirection: "row", alignItems: "center" },
 });

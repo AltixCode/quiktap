@@ -22,6 +22,20 @@ export const FREE_HISTORY = 5;
 const MIN_GAP_MS = 250;
 const MAX_GAP_MS = 1800;
 
+/**
+ * How much narrower the gap's *upper* bound gets per target already faced this
+ * round, and the floor it never shrinks past.
+ *
+ * A TestFlight tester asked for targets to arrive faster as a round goes on.
+ * There is no separate "level" concept in this game -- a round is a fixed
+ * thirty seconds of back-to-back targets -- so `index` (the nth target this
+ * round) is what stands in for one. Only the *upper* bound narrows; MIN_GAP_MS
+ * is the documented reaction floor and stays fixed regardless of how far into
+ * the round a player is.
+ */
+const RAMP_PER_TARGET_MS = 30;
+const MIN_MAX_GAP_MS = 700;
+
 export interface Mode {
   id: string;
   nameKey: string;
@@ -31,8 +45,18 @@ export interface Mode {
 }
 
 export const MODES: Mode[] = [
-  { id: 'targets', nameKey: 'modeTargets', descKey: 'modeTargetsDesc', free: true },
-  { id: 'gosignal', nameKey: 'modeGoSignal', descKey: 'modeGoSignalDesc', free: false },
+  {
+    id: "targets",
+    nameKey: "modeTargets",
+    descKey: "modeTargetsDesc",
+    free: true,
+  },
+  {
+    id: "gosignal",
+    nameKey: "modeGoSignal",
+    descKey: "modeGoSignalDesc",
+    free: false,
+  },
 ];
 
 export function canUseMode(id: string, isPremium: boolean): boolean {
@@ -52,11 +76,16 @@ function hash(seed: number, index: number): number {
   return (h ^ (h >>> 16)) >>> 0;
 }
 
-const unit = (seed: number, index: number): number => hash(seed, index) / 0xffffffff;
+const unit = (seed: number, index: number): number =>
+  hash(seed, index) / 0xffffffff;
 
 /** Milliseconds to wait before target `index` appears. */
 export function nextTargetAt(seed: number, index: number): number {
-  return Math.round(MIN_GAP_MS + unit(seed, index) * (MAX_GAP_MS - MIN_GAP_MS));
+  const maxGap = Math.max(
+    MIN_MAX_GAP_MS,
+    MAX_GAP_MS - index * RAMP_PER_TARGET_MS,
+  );
+  return Math.round(MIN_GAP_MS + unit(seed, index) * (maxGap - MIN_GAP_MS));
 }
 
 /**
@@ -120,12 +149,12 @@ export interface Grade {
  * average lands in exactly one. A gap here would render a blank grade.
  */
 const GRADES: { max: number; key: string }[] = [
-  { max: 200, key: 'gradeLightning' },
-  { max: 260, key: 'gradeSharp' },
-  { max: 330, key: 'gradeQuick' },
-  { max: 420, key: 'gradeSteady' },
-  { max: 550, key: 'gradeRelaxed' },
-  { max: Number.POSITIVE_INFINITY, key: 'gradeScenic' },
+  { max: 200, key: "gradeLightning" },
+  { max: 260, key: "gradeSharp" },
+  { max: 330, key: "gradeQuick" },
+  { max: 420, key: "gradeSteady" },
+  { max: 550, key: "gradeRelaxed" },
+  { max: Number.POSITIVE_INFINITY, key: "gradeScenic" },
 ];
 
 export function gradeFor(averageMs: number): Grade {
@@ -144,7 +173,10 @@ export interface Result {
 }
 
 /** Newest first, trimmed to what this player's tier keeps. */
-export function summarise(results: readonly Result[], isPremium: boolean): Result[] {
+export function summarise(
+  results: readonly Result[],
+  isPremium: boolean,
+): Result[] {
   const sorted = [...results].sort((a, b) => b.at - a.at);
   return isPremium ? sorted : sorted.slice(0, FREE_HISTORY);
 }

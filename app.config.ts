@@ -1,4 +1,4 @@
-import type { ExpoConfig } from 'expo/config';
+import type { ExpoConfig } from "expo/config";
 
 /**
  * Store identity and native configuration for Quiktap.
@@ -23,9 +23,9 @@ import type { ExpoConfig } from 'expo/config';
  * that binary; they happen to fail the identifier gate first, which masks it.
  */
 const IOS_ADMOB_APP_ID =
-  process.env.ADMOB_IOS_APP_ID || 'ca-app-pub-3940256099942544~1458002511';
+  process.env.ADMOB_IOS_APP_ID || "ca-app-pub-3940256099942544~1458002511";
 const ANDROID_ADMOB_APP_ID =
-  process.env.ADMOB_ANDROID_APP_ID || 'ca-app-pub-3940256099942544~3347511713';
+  process.env.ADMOB_ANDROID_APP_ID || "ca-app-pub-3940256099942544~3347511713";
 
 /**
  * SKAdNetwork identifiers for the ad networks AdMob mediates on iOS. Without these, iOS
@@ -33,27 +33,60 @@ const ANDROID_ADMOB_APP_ID =
  * https://developers.google.com/admob/ios/3p-skadnetworks when the SDK is updated.
  */
 const SK_AD_NETWORK_ITEMS = [
-  'cstr6suwn9.skadnetwork', '4fzdc2evr5.skadnetwork', '2fnua5tdw4.skadnetwork',
-  'ydx93a7ass.skadnetwork', 'p78axxw29g.skadnetwork', 'v72qych5uu.skadnetwork',
-  'ludvb6z3bs.skadnetwork', 'cp8zw746q7.skadnetwork', '3sh42y64q3.skadnetwork',
-  'c6k4g5qg8m.skadnetwork', 's39g8k73mm.skadnetwork', 'wg4vff78zm.skadnetwork',
-  '3qy4746246.skadnetwork', 'f38h382jlk.skadnetwork', 'hs6bdukanm.skadnetwork',
-  'mlmmfzh3r3.skadnetwork', 'v4nxqhlyqp.skadnetwork', 'wzmmz9fp6w.skadnetwork',
-  'su67r6k2v3.skadnetwork', 'yclnxrl5pm.skadnetwork', 't38b2kh725.skadnetwork',
-  '7ug5zh24hu.skadnetwork', 'gta9lk7p23.skadnetwork', 'vutu7akeur.skadnetwork',
-  'y5ghdn5j9k.skadnetwork', 'v9wttpbfk9.skadnetwork', 'n38lu8286q.skadnetwork',
-  '47vhws6wlr.skadnetwork', 'kbd757ywx3.skadnetwork', '9t245vhmpl.skadnetwork',
-  'a2p9lx4jpn.skadnetwork', '22mmun2rn5.skadnetwork', '44jx6755aq.skadnetwork',
-  'k674qkevps.skadnetwork', '4468km3ulz.skadnetwork', '2u9pt9hc89.skadnetwork',
-  '8s468mfl3y.skadnetwork', 'klf5c3l5u5.skadnetwork', 'ppxm28t8ap.skadnetwork',
-  'kbmxgpxpgc.skadnetwork', 'uw77j35x4d.skadnetwork', '578prtvx9j.skadnetwork',
-  '4dzt52r2t5.skadnetwork', 'tl55sbb4fm.skadnetwork', 'c3frkrj4fj.skadnetwork',
-  'e5fvkxwrpn.skadnetwork', '8c4e2ghe7u.skadnetwork', '3rd42ekr43.skadnetwork',
-  '97r2b46745.skadnetwork', '3qcr597p9d.skadnetwork',
+  "cstr6suwn9.skadnetwork",
+  "4fzdc2evr5.skadnetwork",
+  "2fnua5tdw4.skadnetwork",
+  "ydx93a7ass.skadnetwork",
+  "p78axxw29g.skadnetwork",
+  "v72qych5uu.skadnetwork",
+  "ludvb6z3bs.skadnetwork",
+  "cp8zw746q7.skadnetwork",
+  "3sh42y64q3.skadnetwork",
+  "c6k4g5qg8m.skadnetwork",
+  "s39g8k73mm.skadnetwork",
+  "wg4vff78zm.skadnetwork",
+  "3qy4746246.skadnetwork",
+  "f38h382jlk.skadnetwork",
+  "hs6bdukanm.skadnetwork",
+  "mlmmfzh3r3.skadnetwork",
+  "v4nxqhlyqp.skadnetwork",
+  "wzmmz9fp6w.skadnetwork",
+  "su67r6k2v3.skadnetwork",
+  "yclnxrl5pm.skadnetwork",
+  "t38b2kh725.skadnetwork",
+  "7ug5zh24hu.skadnetwork",
+  "gta9lk7p23.skadnetwork",
+  "vutu7akeur.skadnetwork",
+  "y5ghdn5j9k.skadnetwork",
+  "v9wttpbfk9.skadnetwork",
+  "n38lu8286q.skadnetwork",
+  "47vhws6wlr.skadnetwork",
+  "kbd757ywx3.skadnetwork",
+  "9t245vhmpl.skadnetwork",
+  "a2p9lx4jpn.skadnetwork",
+  "22mmun2rn5.skadnetwork",
+  "44jx6755aq.skadnetwork",
+  "k674qkevps.skadnetwork",
+  "4468km3ulz.skadnetwork",
+  "2u9pt9hc89.skadnetwork",
+  "8s468mfl3y.skadnetwork",
+  "klf5c3l5u5.skadnetwork",
+  "ppxm28t8ap.skadnetwork",
+  "kbmxgpxpgc.skadnetwork",
+  "uw77j35x4d.skadnetwork",
+  "578prtvx9j.skadnetwork",
+  "4dzt52r2t5.skadnetwork",
+  "tl55sbb4fm.skadnetwork",
+  "c3frkrj4fj.skadnetwork",
+  "e5fvkxwrpn.skadnetwork",
+  "8c4e2ghe7u.skadnetwork",
+  "3rd42ekr43.skadnetwork",
+  "97r2b46745.skadnetwork",
+  "3qcr597p9d.skadnetwork",
 ];
 
 const TRACKING_USAGE =
-  'This lets us show you ads that are more relevant to you. Your data is never sold, and Quiktap works exactly the same either way.';
+  "This lets us show you ads that are more relevant to you. Your data is never sold, and Quiktap works exactly the same either way.";
 
 // Marketing version and build number.
 //
@@ -69,22 +102,22 @@ const TRACKING_USAGE =
 // An empty CFBundleShortVersionString or CFBundleVersion is not a small
 // cosmetic problem — it is an invalid Info.plist, which Apple rejects on
 // upload and which nothing in this repo would have caught first.
-const VERSION = process.env.APP_VERSION || '1.0.0';
-const BUILD = process.env.APP_BUILD || '1';
+const VERSION = process.env.APP_VERSION || "1.0.0";
+const BUILD = process.env.APP_BUILD || "1";
 
 const config: ExpoConfig = {
-  name: 'Quiktap',
-  slug: 'quiktap',
+  name: "Quiktap",
+  slug: "quiktap",
   version: VERSION,
-  orientation: 'portrait',
-  icon: './assets/icon.png',
-  scheme: 'quiktap',
-  userInterfaceStyle: 'automatic',
-  backgroundColor: '#12100A',
-  primaryColor: '#FACC15',
-  assetBundlePatterns: ['**/*'],
+  orientation: "portrait",
+  icon: "./assets/icon.png",
+  scheme: "quiktap",
+  userInterfaceStyle: "automatic",
+  backgroundColor: "#12100A",
+  primaryColor: "#FACC15",
+  assetBundlePatterns: ["**/*"],
   ios: {
-    bundleIdentifier: 'com.altixcode.quiktap',
+    bundleIdentifier: "com.altixcode.quiktap",
     buildNumber: BUILD,
     supportsTablet: true,
     requireFullScreen: false,
@@ -105,46 +138,46 @@ const config: ExpoConfig = {
     },
   },
   android: {
-    package: 'com.altixcode.quiktap',
+    package: "com.altixcode.quiktap",
     versionCode: Number.parseInt(BUILD, 10),
     adaptiveIcon: {
-      backgroundColor: '#12100A',
-      foregroundImage: './assets/android-icon-foreground.png',
-      monochromeImage: './assets/android-icon-monochrome.png',
+      backgroundColor: "#12100A",
+      foregroundImage: "./assets/android-icon-foreground.png",
+      monochromeImage: "./assets/android-icon-monochrome.png",
     },
     predictiveBackGestureEnabled: false,
     permissions: [
-      'com.google.android.gms.permission.AD_ID',
-      'com.android.vending.BILLING',
-      'android.permission.INTERNET',
-      'android.permission.VIBRATE',
+      "com.google.android.gms.permission.AD_ID",
+      "com.android.vending.BILLING",
+      "android.permission.INTERNET",
+      "android.permission.VIBRATE",
     ],
-    blockedPermissions: ['android.permission.ACCESS_COARSE_LOCATION'],
+    blockedPermissions: ["android.permission.ACCESS_COARSE_LOCATION"],
   },
-  web: { favicon: './assets/favicon.png' },
+  web: { favicon: "./assets/favicon.png" },
   plugins: [
     // RevenueCat's Android SDK pulls in Amazon Appstore support unconditionally
     // (react-native-purchases -> purchases-hybrid-common -> purchases-store-amazon ->
     // com.amazon.device:amazon-appstore-sdk), which made R8 emit thousands of
     // warnings during release minification and crash minifyReleaseWithR8 with
     // OutOfMemoryError: Metaspace -- see the plugin file for the full trace.
-    './plugins/withExcludeAmazonAppstore',
+    "./plugins/withExcludeAmazonAppstore",
 
-    'expo-router',
+    "expo-router",
     // iOS 26+ refuses to launch apps that have not adopted the UIScene lifecycle, which
     // Expo SDK 57 / RN 0.86 do not yet generate. Drop this once the template does it itself.
-    './plugins/withUIScene',
+    "./plugins/withUIScene",
     [
-      'expo-splash-screen',
+      "expo-splash-screen",
       {
-        image: './assets/splash-icon.png',
+        image: "./assets/splash-icon.png",
         imageWidth: 200,
-        resizeMode: 'contain',
-        backgroundColor: '#12100A',
+        resizeMode: "contain",
+        backgroundColor: "#12100A",
       },
     ],
     [
-      'react-native-google-mobile-ads',
+      "react-native-google-mobile-ads",
       {
         androidAppId: ANDROID_ADMOB_APP_ID,
         iosAppId: IOS_ADMOB_APP_ID,
@@ -152,11 +185,23 @@ const config: ExpoConfig = {
         skAdNetworkItems: SK_AD_NETWORK_ITEMS,
       },
     ],
-    ['expo-tracking-transparency', { userTrackingPermission: TRACKING_USAGE }],
+    ["expo-tracking-transparency", { userTrackingPermission: TRACKING_USAGE }],
     [
-      'expo-build-properties',
+      "expo-audio",
       {
-        ios: { deploymentTarget: '16.4' },
+        // Playback-only sound effects -- no recording anywhere in this app, so
+        // none of expo-audio's mic permissions or background-audio entitlements
+        // apply. Declaring them anyway would be an unused permission a store
+        // review can flag and a real privacy question this app has no answer to.
+        microphonePermission: false,
+        recordAudioAndroid: false,
+        enableBackgroundPlayback: false,
+      },
+    ],
+    [
+      "expo-build-properties",
+      {
+        ios: { deploymentTarget: "16.4" },
         android: {
           compileSdkVersion: 36,
           targetSdkVersion: 36,
@@ -179,13 +224,13 @@ const config: ExpoConfig = {
           // was objecting to. The cost is that the app cannot install on x86
           // Android — some Chromebooks and a few uncommon tablets. Reversible
           // in one line, and nothing has shipped to Play.
-          buildArchs: ['arm64-v8a', 'armeabi-v7a'],
+          buildArchs: ["arm64-v8a", "armeabi-v7a"],
         },
       },
     ],
   ],
-  runtimeVersion: { policy: 'appVersion' },
-  owner: process.env.EXPO_OWNER || 'altixcodes-team',
+  runtimeVersion: { policy: "appVersion" },
+  owner: process.env.EXPO_OWNER || "altixcodes-team",
   extra: {
     eas: { projectId: process.env.EAS_PROJECT_ID },
   },
